@@ -2,48 +2,55 @@ import pygame
 import math
 
 class Players(pygame.sprite.Sprite):
-    def __init__(self, image, weaponImage):
+    def __init__(self, image, x,y):
         pygame.sprite.Sprite.__init__(self)
 
-        self.position = [20 ,20]
+        self.image = pygame.image.load(image).convert()
+        self.rect = self.image.get_rect()
+
+        self.position = [x - self.rect.width//2, y - self.rect.height//2]
+        self.center = [x, y]
         self.angle = 0
         self.lookingAt = [0,0]
         self.velocity = [0,0]
         self.speed = 5
-        self.color = (255, 0,0)
-        
-   
-     
-        self.image = pygame.image.load(image).convert()
-        self.rect = self.image.get_rect()
-        
-        self.weapon = pygame.image.load(weaponImage).convert_alpha()
+        self.color = (0, 0,0)
+        self.gunLength = 50
 
-        self.baseImage = self.image.copy()
 
     def update(self):
-        # print(self.width)
+
         self.position[0] += self.velocity[0]
         self.position[1] += self.velocity[1]
-
-    # def updateRect(self):
-        # update the object's rect attribute with the new x,y coordinates
-        # w, h = self.image.get_size()
-        # self.width, self.height = w, h
-        # self.rect = pygame.Rect(self.x - w / 2, self.y - h / 2, w, h)
+        self.center[0] += self.velocity[0]
+        self.center[1] += self.velocity[1]
 
     def look(self, mouseX, mouseY):
-        print('a')
-        xDif = abs(mouseX - self.position[0])
-        yDif = abs(mouseY - self.position[1])
-        self.angle = math.atan(yDif/xDif)
 
-        self.lookingAt = [mouseX, mouseY]
+        xDif = mouseX - self.center[0]
+
+        yDif = mouseY - self.center[1]
+
+        if xDif == 0:
+            self.angle = math.pi/2
+        else:
+            self.angle = math.atan(yDif/xDif)
+
+        if xDif >= 0:
+            newX = math.cos(self.angle) * self.gunLength + self.center[0]
+            newY = math.sin(self.angle) * self.gunLength + self.center[1]
+
+        elif xDif <= 0 :
+            newX = -math.cos(self.angle) * self.gunLength + self.center[0]
+            newY = -math.sin(self.angle) * self.gunLength + self.center[1]
+
+
+        self.lookingAt = [newX, newY]
     
     def draw(self, display):
-        pygame.draw.line(display, self.color , (self.position[0], self.position[1]), (self.lookingAt[0], self.lookingAt[1]), 4 )
+        pygame.draw.line(display, self.color, (self.center[0], self.center[1]), (self.lookingAt[0] , self.lookingAt[1]), 10 )
         display.blit(self.image, self.position)
-        # pygame.surface.Surface.blit(self.weapon, screen)
+
 
 
 # class Enemy(Player):
