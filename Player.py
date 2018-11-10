@@ -5,10 +5,10 @@ class Players(pygame.sprite.Sprite):
     def __init__(self, image, x,y):
         pygame.sprite.Sprite.__init__(self)
 
-        self.image = pygame.image.load(image).convert()
-        self.rect = self.image.get_rect()
-
-        self.position = [x - self.rect.width//2, y - self.rect.height//2]
+        if image != "":
+            self.image = pygame.image.load(image).convert()
+            self.rect = self.image.get_rect()
+            self.position = [x - self.rect.width//2, y - self.rect.height//2]
         self.center = [x, y]
         self.angle = 0
         self.lookingAt = [0,0]
@@ -53,5 +53,27 @@ class Players(pygame.sprite.Sprite):
 
 
 
-# class Enemy(Player):
-#     def __init__():
+class Enemy(Players):
+    def __init__(self,image, x,y):
+        super().__init__(image, x,y)
+        self.radius = 15
+        self.color = (255,0,0)
+        self.position = [x, y]
+
+    def draw(self, display):
+        pygame.draw.circle(display, self.color, (self.center[0], self.center[1]), self.radius)
+
+    def chase(self, prey):
+        xDistance = self.position[0] - prey.center[0]
+        yDistance = self.position[1] - prey.center[1]
+
+        if yDistance < 0:
+            self.velocity[1] = 1
+        else:
+            self.velocity[1] = -1
+
+        if xDistance < 0:
+            self.velocity[0] = 1
+        else:
+            self.velocity[0] = -1
+\
