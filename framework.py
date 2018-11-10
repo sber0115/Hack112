@@ -34,6 +34,9 @@ class PygameGame(object):
         
     def mousePressed(self, x, y):
         self.mike.color = (255,0,0)
+        mikesPosition = self.mike.position
+        bulletToAdd = Bullets.Bullet(mikesPosition[0], mikesPosition[1])
+        self.bullets.add(bulletToAdd)
 
     def mouseReleased(self, x, y):
         self.mike.color = (0,0,0)
