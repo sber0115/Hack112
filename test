@@ -1,170 +1,87 @@
-import module_manager
-module_manager.review()
 import pygame
+import math
 
+class Players(pygame.sprite.Sprite):
+    def __init__(self, image, x,y):
+        pygame.sprite.Sprite.__init__(self)
 
-import Player
+        if image != "":
+            self.image = pygame.image.load(image).convert()
+            self.imageSize= self.image.get_rect()
+            self.position = [x - self.imageSize.width//2, y - self.imageSize.height//2]
+            self.rect = self.image.get_rect()
+        self.center = [x, y]
+        self.angle = 0
+        self.lookingAt = [0, 0]
+        self.velocity = [0, 0]
+        self.speed = 5
+        self.color = (0, 0,0)
+        self.gunLength = 50
 
-'''
-pygamegame.py
-created by Lukas Peraza
- for 15-112 F15 Pygame Optional Lecture, 11/11/15
-use this code in your term project if you want
-- CITE IT
-- you can modify it to your liking
-  - BUT STILL CITE IT
-- you should remove the print calls from any function you aren't using
-- you might want to move the pygame.display.flip() to your redrawAll function,
-    in case you don't need to update the entire display every frame (then you
-    should use pygame.display.update(Rect) instead)
-'''
+    def updateRect(self):
+        # print('a', self.rect.x)
+        self.rect.topleft = self.position[0] - self.imageSize.width, self.position[1] - self.imageSize.height
+        self.rect.bottomright = self.position[0] + self.imageSize.width, self.position[1] + self.imageSize.height
 
-class PygameGame(object):
-    def init(self):
-        self.entities = pygame.sprite.Group()
-        self.obstacles = pygame.sprite.Group()
-        self.bullets = pygame.sprite.Group()
-        self.clock = 0
+    def update(self):
 
-        self.enemy = Player.Enemy("", self.width - 20, self.height - 20)
-        self.mike = Player.Players("kimchee.jpg", self.width//2, self.height//2)
-        self.entities.add(self.mike)
+        self.position[0] += self.velocity[0]
+        self.position[1] += self.velocity[1]
+        self.center[0] += self.velocity[0]
+        self.center[1] += self.velocity[1]
 
-        self.entities.add(self.enemy)
-        print(self.entities)
-        self.display = None
-        # print(len(self.entities))
-        
-    def mousePressed(self, x, y):
-        self.mike.color = (255,0,0)
+    def look(self, mouseX, mouseY):
 
-    def mouseReleased(self, x, y):
-        self.mike.color = (0,0,0)
+        xDif = mouseX - self.center[0]
 
-    def mouseMotion(self, x, y):
-        self.mike.lookingAt = [x,y]
-        self.mike.look(x, y)
+        yDif = mouseY - self.center[1]
 
-    def mouseDrag(self, x, y):
-        self.mike.lookingAt = [x,y]
-        self.mike.look(x, y)
-
-    def keyPressed(self, keyCode, modifier):
-        pass
-
-    def keyReleased(self, keyCode, modifier):
-        pass
-
-    def moveMike(self):
-
-        if self.isKeyPressed(119):
-
-            self.mike.velocity[1] = -self.mike.speed
-        elif self.isKeyPressed(115):
-            self.mike.velocity[1] = self.mike.speed
+        if xDif == 0:
+            self.angle = math.pi/2
         else:
-            self.mike.velocity[1] = 0
+            self.angle = math.atan(yDif/xDif)
 
-        if self.isKeyPressed(97):
-            self.mike.velocity[0] = -self.mike.speed
-        elif self.isKeyPressed(100):
-            self.mike.velocity[0] = self.mike.speed
-        else:
-            self.mike.velocity[0] = 0
-        self.mike.update()
-        self.mike.updateRect()
+        if xDif >= 0:
+            newX = math.cos(self.angle) * self.gunLength + self.center[0]
+            newY = math.sin(self.angle) * self.gunLength + self.center[1]
 
-    def timerFired(self, dt):
-        self.clock += 1
-        self.moveMike()
+        elif xDif <= 0 :
+            newX = -math.cos(self.angle) * self.gunLength + self.center[0]
+            newY = -math.sin(self.angle) * self.gunLength + self.center[1]
 
-        if self.clock % 4 == 0:
-            self.enemy.update()
-
-        self.enemy.chase(self.mike)
-
-
-        if self.display != None:
-            # print('enemy', self.enemy.rect)
-            # print('mike', self.mike.rect)
-            self.enemy.updateRect(self.display)
-            # pygame.sprite.spritecollide(self.mike, self.entities, True)
-            print(self.mike.rect.topleft, self.mike.rect.bottomright)
-            print(self.enemy.rect.topleft, self.enemy.rect.bottomright)
-            collided = pygame.sprite.spritecollide(self.mike, self.entities, False)
-            # print(self.entities)
-            print('collided', collided)
-        # groupcollide(group1, group2, dokill1, dokill2, collided=None)
-
-        
-    def redrawAll(self, screen):
-        self.display = screen
-        self.enemy.updateRect(screen)
-        print(self.entities)
-        for sprite in self.entities:
-            sprite.draw(screen)
-
-        # self.mike.draw(screen)
-        # self.enemy.draw(screen)
+        self.lookingAt = [newX, newY]
     
-    def isKeyPressed(self, key):
-            
-        ''' return whether a specific key is being held '''
-        return self._keys.get(key, False)
-
-    def __init__(self, width=600, height=400, fps=60, title="112 Pygame Game"):
-        self.width = width
-        self.height = height
-        self.fps = fps
-        self.title = title
-        self.bgColor = (255, 255, 255)
-        pygame.init()
-
-    def run(self):
-
-        clock = pygame.time.Clock()
-        screen = pygame.display.set_mode((self.width, self.height))
-        # set the title of the window
-        pygame.display.set_caption(self.title)
-
-        # stores all the keys currently being held down
-        self._keys = dict()
-
-        # call game-specific initialization
-        self.init()
-        playing = True
-        while playing:
-            time = clock.tick(self.fps)
-            self.timerFired(time)
-            for event in pygame.event.get():
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    self.mousePressed(*(event.pos))
-                elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                    self.mouseReleased(*(event.pos))
-                elif (event.type == pygame.MOUSEMOTION and
-                      event.buttons == (0, 0, 0)):
-                    self.mouseMotion(*(event.pos))
-                elif (event.type == pygame.MOUSEMOTION and
-                      event.buttons[0] == 1):
-                    self.mouseDrag(*(event.pos))
-                elif event.type == pygame.KEYDOWN:
-                    self._keys[event.key] = True
-                    self.keyPressed(event.key, event.mod)
-                elif event.type == pygame.KEYUP:
-                    self._keys[event.key] = False
-                    self.keyReleased(event.key, event.mod)
-                elif event.type == pygame.QUIT:
-                    playing = False
-            screen.fill(self.bgColor)
-            self.redrawAll(screen)
-            pygame.display.flip()
-
-        pygame.quit()
+    def draw(self, display):
+        pygame.draw.line(display, self.color, (self.center[0], self.center[1]), (self.lookingAt[0] , self.lookingAt[1]), 10 )
+        display.blit(self.image, self.position)
 
 
-def main():
-    game = PygameGame()
-    game.run()
 
-if __name__ == '__main__':
-    main()
+class Enemy(Players):
+    def __init__(self,image, x,y):
+        super().__init__(image, x,y)
+        self.radius = 15
+        self.color = (255,0,0)
+        self.position = [x, y]
+        # self.rect = (self.position[0] - self.radius, self.position[1] - self.radius,
+        #         self.position[0] + self.radius, self.position[1] + self.radius)
+
+    def draw(self, display):
+        pygame.draw.circle(display, self.color, (self.center[0], self.center[1]), self.radius)
+
+    def updateRect(self, display):
+        self.rect = pygame.draw.circle(display, self.color, (self.center[0], self.center[1]), self.radius)
+
+    def chase(self, prey):
+        xDistance = self.position[0] - prey.center[0]
+        yDistance = self.position[1] - prey.center[1]
+
+        if yDistance < 0:
+            self.velocity[1] = 1*abs(prey.velocity[1])*2 + 1
+        else:
+            self.velocity[1] = -1*abs(prey.velocity[1])*2 - 1
+
+        if xDistance < 0:
+            self.velocity[0] = 1*abs(prey.velocity[0])*2 + 1
+        else:
+            self.velocity[0] = -1*abs(prey.velocity[0])*2 - 1
