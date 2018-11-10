@@ -2,9 +2,10 @@ import module_manager
 module_manager.review()
 import pygame
 
+
 #### Classes ####
 
-'''class Bullet(object):
+class Bullet(object):
     # Model
     def __init__(self, cx, cy, angle, speed):
         # A bullet has a position, a size, a direction, and a speed
@@ -41,8 +42,234 @@ import pygame
         return (self.cx + self.r <= 0 or self.cx - self.r >= width) or \
                (self.cy + self.r <= 0 or self.cy - self.r >= height)
 
+####Player and Enemy Classes
+
+
+import pygame
+import math
+
+class Players(pygame.sprite.Sprite):
+    def __init__(self, image, x,y):
+        pygame.sprite.Sprite.__init__(self)
+
+        if image != "":
+            self.image = pygame.image.load(image).convert()
+            self.rect = self.image.get_rect()
+            self.position = [x - self.rect.width//2, y - self.rect.height//2]
+        self.center = [x, y]
+        self.angle = 0
+        self.lookingAt = [0,0]
+        self.velocity = [0,0]
+        self.speed = 5
+        self.color = (0, 0,0)
+        self.gunLength = 50
+
+
+    def update(self):
+
+        self.position[0] += self.velocity[0]
+        self.position[1] += self.velocity[1]
+        self.center[0] += self.velocity[0]
+        self.center[1] += self.velocity[1]
+    
+    def makeBullet(self):
+        # Generates a bullet heading in the direction the ship is facing
+        offset = 35
+        x = self.position[0] + offset*math.cos(math.radians(self.angle)) 
+        y = self.position[1] - offset*math.sin(math.radians(self.angle))
+        
+        return Bullet(x, y, self.angle, 20)
+        
+    def look(self, mouseX, mouseY):
+
+        xDif = mouseX - self.center[0]
+
+        yDif = mouseY - self.center[1]
+
+        if xDif == 0:
+            self.angle = math.pi/2
+        else:
+            self.angle = math.atan(yDif/xDif)
+
+        if xDif >= 0:
+            newX = math.cos(self.angle) * self.gunLength + self.center[0]
+            newY = math.sin(self.angle) * self.gunLength + self.center[1]
+
+        elif xDif <= 0 :
+            newX = -math.cos(self.angle) * self.gunLength + self.center[0]
+            newY = -math.sin(self.angle) * self.gunLength + self.center[1]
+
+
+        self.lookingAt = [newX, newY]
+    
+    def draw(self, display):
+        pygame.draw.line(display, self.color, (self.center[0], self.center[1]), (self.lookingAt[0] , self.lookingAt[1]), 10 )
+        display.blit(self.image, self.position)
+    
+
+class Enemy(Players):
+    def __init__(self,image, x,y):
+        super().__init__(image, x,y)
+        self.radius = 15
+        self.color = (255,0,0)
+        self.position = [x, y]
+
+    def draw(self, display):
+        pygame.draw.circle(display, self.color, (self.center[0], self.center[1]), self.radius)
+
+    def chase(self, prey):
+        xDistance = self.position[0] - prey.center[0]
+        yDistance = self.position[1] - prey.center[1]
+
+        if yDistance < 0:
+            self.velocity[1] = 1
+        else:
+            self.velocity[1] = -1
+
+        if xDistance < 0:
+            self.velocity[0] = 1
+        else:
+            self.velocity[0] = -1
+
+#### Pygame framework
+
+import Player
 
 '''
+pygamegame.py
+created by Lukas Peraza
+ for 15-112 F15 Pygame Optional Lecture, 11/11/15
+use this code in your term project if you want
+- CITE IT
+- you can modify it to your liking
+  - BUT STILL CITE IT
+- you should remove the print calls from any function you aren't using
+- you might want to move the pygame.display.flip() to your redrawAll function,
+    in case you don't need to update the entire display every frame (then you
+    should use pygame.display.update(Rect) instead)
+'''
+
+class PygameGame(object):
+    def init(self):
+        self.entities = pygame.sprite.Group()
+        self.obstacles = pygame.sprite.Group()
+        self.bullets = pygame.sprite.Group()
+
+
+        self.enemy = Player.Enemy("", self.width - 20, self.height - 20)
+        self.mike = Player.Players("kimchee.jpg", self.width//2, self.height//2)
+        self.entities.add(self.mike)
+        self.entities.add(self.enemy)
+        # print(len(self.entities))
+        
+    def mousePressed(self, x, y):
+        self.mike.color = (255,0,0)
+        mikesPosition = self.mike.position
+        #bulletToAdd = Players.makeBullet(self.mike)
+        #print(bulletToAdd)
+        #self.bullets.add(bulletToAdd)
+        #print(self.bullets)
+
+    def mouseReleased(self, x, y):
+        self.mike.color = (0,0,0)
+
+    def mouseMotion(self, x, y):
+        self.mike.lookingAt = [x,y]
+        self.mike.look(x, y)
+
+    def mouseDrag(self, x, y):
+        self.mike.lookingAt = [x,y]
+        self.mike.look(x, y)
+
+        
+    def keyPressed(self, keyCode, modifier):
+        pass
+
+    def keyReleased(self, keyCode, modifier):
+        pass
+
+    def timerFired(self, dt):
+        self.enemy.chase(self.mike)
+        if self.isKeyPressed(119):
+            self.mike.velocity[1] = -self.mike.speed
+        elif self.isKeyPressed(115):
+            self.mike.velocity[1] = self.mike.speed
+        else: self.mike.velocity[1] = 0
+        
+        
+        if self.isKeyPressed(97):
+            self.mike.velocity[0] = -self.mike.speed
+        elif self.isKeyPressed(100):
+             self.mike.velocity[0] = self.mike.speed
+        else: self.mike.velocity[0] = 0
+        
+        
+        # print()
+        self.mike.update()
+        self.enemy.update()
+        
+    def redrawAll(self, screen):
+
+        self.mike.draw(screen)
+        self.enemy.draw(screen)
+
+    
+    def isKeyPressed(self, key):
+            
+        ''' return whether a specific key is being held '''
+        return self._keys.get(key, False)
+
+    def __init__(self, width=600, height=400, fps=60, title="112 Pygame Game"):
+        self.width = width
+        self.height = height
+        self.fps = fps
+        self.title = title
+        self.bgColor = (255, 255, 255)
+        pygame.init()
+
+    def run(self):
+
+        clock = pygame.time.Clock()
+        screen = pygame.display.set_mode((self.width, self.height))
+        # set the title of the window
+        pygame.display.set_caption(self.title)
+
+        # stores all the keys currently being held down
+        self._keys = dict()
+
+        # call game-specific initialization
+        self.init()
+        playing = True
+        while playing:
+            time = clock.tick(self.fps)
+            self.timerFired(time)
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    self.mousePressed(*(event.pos))
+                elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                    self.mouseReleased(*(event.pos))
+                elif (event.type == pygame.MOUSEMOTION and
+                      event.buttons == (0, 0, 0)):
+                    self.mouseMotion(*(event.pos))
+                elif (event.type == pygame.MOUSEMOTION and
+                      event.buttons[0] == 1):
+                    self.mouseDrag(*(event.pos))
+                elif event.type == pygame.KEYDOWN:
+                    self._keys[event.key] = True
+                    self.keyPressed(event.key, event.mod)
+                elif event.type == pygame.KEYUP:
+                    self._keys[event.key] = False
+                    self.keyReleased(event.key, event.mod)
+                elif event.type == pygame.QUIT:
+                    playing = False
+            screen.fill(self.bgColor)
+            self.redrawAll(screen)
+            pygame.display.flip()
+
+        pygame.quit()
+
+    
+    
 #### Graphics Functions ####
 
 from tkinter import *
@@ -56,6 +283,9 @@ def startMousePressed(event, data):
     elif data.width//2 - data.buttonWidth//2 <= event.x <= data.width//2 + data.buttonWidth//2 \
     and data.scrollY + 3*data.height//4 <= event.y <= data.scrollY + 3*data.height//4 + data.buttonHeight:
         data.mode = "gameState"
+        game = PygameGame()
+        game.run()
+
 
 def startKeyPressed(event, data):
     if event.keysym == "space":
@@ -64,6 +294,9 @@ def startKeyPressed(event, data):
 def startTimerFired(data):
     if data.scrollY >= 0:
         data.scrollY -= 25
+
+def draw():
+    pass
 
 def startRedrawAll(canvas, data):
     
@@ -114,6 +347,8 @@ def instructionMousePressed(event, data):
     if data.width//2 - data.buttonWidth//2 <= event.x <= data.width//2 + data.buttonWidth//2 and \
     3*data.height//4 <= event.y <= 3*data.height//4 + data.buttonHeight:
         data.mode = "gameState"
+        game = PygameGame()
+        game.run()
     
 def instructionRedrawAll(canvas, data):
     #creates instructions
@@ -127,18 +362,6 @@ def instructionRedrawAll(canvas, data):
     canvas.create_text(data.width//2, 3*data.height//4 + data.buttonHeight//2, text = "Play", font = "Arial 15 bold", fill = "white")
     
 #game dispatcher
-
-def gameMousePressed(event, data):
-    pass
-    
-def gameKeyPressed(event, data):
-    pass
-
-def gameTimerFired(data):
-    pass
-
-def gameRedrawAll(canvas, data):
-    canvas.create_rectangle(-1, -1, data.width, data.height, fill = "red")
 
 
 ## mode dispatcher
@@ -155,40 +378,27 @@ def mousePressed(event, data):
         startMousePressed(event, data)
     elif data.mode == "instructionState":
         instructionMousePressed(event, data)
-    elif data.mode == "gameState":
-        gameMousePressed(event, data)
-    elif data.mode == "gameOverState":
-        gameOverMousePressed(event, data)
 
 def keyPressed(event, data):
     if data.mode == "startState":
         startKeyPressed(event, data)
-    elif data.mode == "gameState":
-        gameKeyPressed(event, data)
-    elif data.mode == "gameOverState":
-        gameOverKeyPressed(event, data)
 
 def timerFired(data):
     if data.mode == "startState":
         startTimerFired(data)
-    elif data.mode == "gameState":
-        gameTimerFired(data)
-    elif data.mode == "gameOverState":
-        gameOverTimerFired(data)
 
 def redrawAll(canvas, data):
     if data.mode == "startState":
         startRedrawAll(canvas, data)
     elif data.mode == "instructionState":
         instructionRedrawAll(canvas, data)
-    elif data.mode == "gameState":
-        gameRedrawAll(canvas, data)
-    elif data.mode == "gameOverState":
-        gameOverRedrawAll(canvas, data)
+
+
 
 #################################################################
 # use the run function as-is
 #################################################################
+
 
 def run(width=300, height=300):
     def redrawAllWrapper(canvas, data):
@@ -230,6 +440,7 @@ def run(width=300, height=300):
                             keyPressedWrapper(event, canvas, data))
     timerFiredWrapper(canvas, data)
     # and launch the app
+    #exitButton = Button(root, text = "Play", command = root.destroy).pack()
     root.mainloop()  # blocks until window is closed
     print("bye!")
 
