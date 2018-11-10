@@ -25,21 +25,22 @@ class PygameGame(object):
         self.obstacles = pygame.sprite.Group()
         self.bullets = pygame.sprite.Group()
         
-        self.mike = Player.Players("kimchee.jpg", "gun.jpg")
+        self.mike = Player.Players("kimchee.jpg", self.width//2, self.height//2)
         self.entities.add(self.mike)
         
     def mousePressed(self, x, y):
-        self.mike.color = (0,0,0)
+        self.mike.color = (255,0,0)
 
     def mouseReleased(self, x, y):
-        self.mike.color = (255,0,0)
+        self.mike.color = (0,0,0)
 
     def mouseMotion(self, x, y):
         self.mike.lookingAt = [x,y]
-
+        self.mike.look(x, y)
 
     def mouseDrag(self, x, y):
         self.mike.lookingAt = [x,y]
+        self.mike.look(x, y)
 
     def keyPressed(self, keyCode, modifier):
         pass
@@ -50,6 +51,7 @@ class PygameGame(object):
         pass
 
     def timerFired(self, dt):
+
         if self.isKeyPressed(119):
             self.mike.velocity[1] = -self.mike.speed
         elif self.isKeyPressed(115):
