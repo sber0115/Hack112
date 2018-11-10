@@ -1,16 +1,20 @@
 import module_manager
+
 module_manager.review()
 
 import pygame
 import Boardmaker
 import Box
-        
+
+
 class PygameGame(object):
 
     def init(self):
-        self.board = Boardmaker.makeBoard(20,Boardmaker.obstacles)
-        self.sizex = self.width // 10
-        self.sizey = self.height // 10
+        self.board = Boardmaker.makeBoard(20, Boardmaker.obstacles)
+        print(self.board)
+        self.sizex = self.width // 20
+        self.sizey = self.height // 20
+
     def mousePressed(self, x, y):
         pass
 
@@ -35,11 +39,11 @@ class PygameGame(object):
     def redrawAll(self, screen):
         for i in range(20):
             for j in range(20):
-                X = j* self.sizex
+                X = j * self.sizex
                 Y = i * self.sizey
                 if self.board[i][j] == 1:
-                    obs = Box.Box(X,Y,self.sizex,self.sizey)
-                    Box.Box.draw(obs,screen)
+                    obs = Box.Box(X, Y, self.sizex, self.sizey)
+                    Box.Box.draw(obs, screen)
 
     def isKeyPressed(self, key):
         ''' return whether a specific key is being held '''
@@ -99,12 +103,6 @@ def main():
     game = PygameGame()
     game.run()
 
+
 if __name__ == '__main__':
     main()
-        
-        
-        
-        
-        
-        
-        
