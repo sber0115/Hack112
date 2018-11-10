@@ -9,9 +9,8 @@ class PygameGame(object):
 
     def init(self):
         self.board = Boardmaker.makeBoard(20,Boardmaker.obstacles)
-        print(self.board)
-        self.sizex = self.width // 20
-        self.sizey = self.height // 20
+        self.sizex = self.width // 10
+        self.sizey = self.height // 10
     def mousePressed(self, x, y):
         pass
 
