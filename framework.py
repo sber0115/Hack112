@@ -1,8 +1,8 @@
 import module_manager
 module_manager.review()
 import pygame
-
-
+import Boardmaker
+import Box
 import Player
 
 '''
@@ -21,22 +21,31 @@ use this code in your term project if you want
 
 class PygameGame(object):
     def init(self):
+        
+        self.board = Boardmaker.makeBoard(20,Boardmaker.obstacles)
+        self.sizex = self.width // 10
+        self.sizey = self.height // 10
+        self.scrollx = 0
+        self.scrolly = 0
+        self.xOffset = 0
+        self.yOffset = 0
+        
         self.entities = pygame.sprite.Group()
         self.obstacles = pygame.sprite.Group()
         self.bullets = pygame.sprite.Group()
-
+        self.clock = 0
 
         self.enemy = Player.Enemy("", self.width - 20, self.height - 20)
         self.mike = Player.Players("kimchee.jpg", self.width//2, self.height//2)
         self.entities.add(self.mike)
+
         self.entities.add(self.enemy)
+        print(self.entities)
+        self.display = None
         # print(len(self.entities))
         
     def mousePressed(self, x, y):
         self.mike.color = (255,0,0)
-        mikesPosition = self.mike.position
-        bulletToAdd = Bullets.Bullet(mikesPosition[0], mikesPosition[1])
-        self.bullets.add(bulletToAdd)
 
     def mouseReleased(self, x, y):
         self.mike.color = (0,0,0)
@@ -51,42 +60,91 @@ class PygameGame(object):
 
     def keyPressed(self, keyCode, modifier):
         pass
-
+            
     def keyReleased(self, keyCode, modifier):
         pass
 
-    def timerFired(self, dt):
-        self.enemy.chase(self.mike)
+    def moveMap(self):
+
         if self.isKeyPressed(119):
-            self.mike.velocity[1] = -self.mike.speed
+
+            self.scrolly = self.mike.speed
+            self.enemy.center[1] += 5
+            
         elif self.isKeyPressed(115):
-            self.mike.velocity[1] = self.mike.speed
-        else: self.mike.velocity[1] = 0
-        
-        
+            self.scrolly = -self.mike.speed
+            self.enemy.center[1] -= 5
+        else:
+            self.scrolly = 0
+
         if self.isKeyPressed(97):
-            self.mike.velocity[0] = -self.mike.speed
+            self.scrollx = self.mike.speed
+            self.enemy.center[0] += 5
+            
         elif self.isKeyPressed(100):
-             self.mike.velocity[0] = self.mike.speed
-        else: self.mike.velocity[0] = 0
+            self.scrollx = -self.mike.speed
+            self.enemy.center[0] -= 5
+            
+        else:
+            self.scrollx = 0
+            self.enemy.velocity[0] = 0
+            
         
         
-        # print()
-        self.mike.update()
+    def timerFired(self, dt):
+        self.clock += 1
+        self.moveMap()
+        self.xOffset += self.scrollx
+        self.yOffset += self.scrolly
+
+        # if self.clock % 4 == 0:
+       
         self.enemy.update()
         
+        # self.enemy.chase(self.mike)
+
+
+        if self.display != None:
+            # print('enemy', self.enemy.rect)
+            # print('mike', self.mike.rect)
+            self.enemy.updateRect(self.display)
+            # pygame.sprite.spritecollide(self.mike, self.entities, True)
+           
+            collided = pygame.sprite.spritecollide(self.mike, self.entities, False)
+            # print(self.entities)
+            
+        # groupcollide(group1, group2, dokill1, dokill2, collided=None)
+
+        
     def redrawAll(self, screen):
+        for i in range(20):
+            for j in range(20):
+                X = j* self.sizex + self.xOffset
+                Y = i * self.sizey + self.yOffset
+                if self.board[i][j] == 1:
+                    obs = Box.Box(X,Y,self.sizex,self.sizey)
+                    Box.Box.draw(obs,screen)
+                    
 
-        self.mike.draw(screen)
-        self.enemy.draw(screen)
+        
+        self.display = screen
+        self.enemy.updateRect(screen)
+        
+        for sprite in self.entities:
+            sprite.draw(screen)
 
+        
+
+
+        # self.mike.draw(screen)
+        # self.enemy.draw(screen)
     
     def isKeyPressed(self, key):
             
         ''' return whether a specific key is being held '''
         return self._keys.get(key, False)
 
-    def __init__(self, width=600, height=400, fps=60, title="112 Pygame Game"):
+    def __init__(self, width=600, height=600, fps=60, title="112 Pygame Game"):
         self.width = width
         self.height = height
         self.fps = fps
